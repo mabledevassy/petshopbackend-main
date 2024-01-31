@@ -13,15 +13,13 @@ const app=new express();
 const catemodel=require('./model/Categorydetails')
 const subcatemodel=require('./model/Subcategorydetails')
 const itemmodel = require("./model/Itemdetails");
+const data2model=require("./model/Loginmodel")
 
 app.use(express.urlencoded({extended:true}))
 app.use(express.json());
 app.use(cors());
 
-app.listen(3005,(request,response)=>{
-    console.log("port is running in 3005")
 
-})
 
 // app.use("/c", CategoryRouter)
 
@@ -85,6 +83,7 @@ app.put('/edits/:id',async(request,response)=>{
 //     response.send("Data uploaded")
 // })
 app.put('/editi/:id',async(request,response)=>{
+    console.log("ass")
     let id=request.params.id
     await itemmodel.findByIdAndUpdate(id,request.body)
     response.send("Data uploaded")
@@ -108,4 +107,24 @@ app.post('/inew',upload.single('image1'),async (request,response) => {
 
     }
 
+})
+app.post('/Loginsearch', async (request, response) => {
+    const { username, password } = request.body;
+    console.log(request.body)
+    try {
+        const user = await data2model.findOne({ username,password });
+      
+        if (user) {
+          response.json({ success: true, message: 'Login successful' });
+        }
+         else {
+          response.json({ success: false, message: 'Invalid Password and email' });
+        }
+      } catch (error) {
+        response.status(500).json({ success: false, message: 'Error during login' });
+      }
+  
+})
+app.listen(5005, (request, response) => {
+    console.log("Port ok")
 })
