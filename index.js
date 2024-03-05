@@ -13,6 +13,8 @@ const subcatemodel = require("./model/Subcategorydetails");
 const itemmodel = require("./model/Itemdetails");
 const data2model = require("./model/Loginmodel");
 const ordermodel = require("./model/Orderdetails");
+const signupmodel=require("./model/Signupdetails");
+const data3model=require("./model/Userlogindetails")
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -40,6 +42,14 @@ app.post("/cnew", (request, response) => {
   new subcatemodel(request.body).save();
   response.send("Record Successfully Saved");
 });
+
+app.post('/lnew', (request, response) => {
+  console.log(request.body)
+  new signupmodel(request.body).save();
+  response.send("Record Successfully Saved")
+
+})
+
 // app.post('/inew',(request,response)=>{
 //     console.log(request.body)
 //     new itemmodel(request.body).save();
@@ -61,10 +71,10 @@ app.get("/view", async (request, response) => {
 //   var data = await subcatemodel.find();
 //   response.send(data);
 // });
-app.get("/iview", async (request, response) => {
-  var data = await itemmodel.find();
-  response.send(data);
-});
+// app.get("/iview", async (request, response) => {
+//   var data = await itemmodel.find();
+//   response.send(data);
+// });
 app.put("/edit/:id", async (request, response) => {
   let id = request.params.id;
   await catemodel.findByIdAndUpdate(id, request.body);
@@ -88,11 +98,10 @@ app.put("/editi/:id", async (request, response) => {
 });
 app.post("/inew", upload.single("image1"), async (request, response) => {
   try {
-    const { Category, Subcategory, Description, Price } = request.body;
+    const { sid, Description, Price } = request.body;
     const newdata = new itemmodel({
-      Category,
-      Subcategory,
-      Description,
+      sid,
+     Description,
       Price,
       image1: {
         data: request.file.buffer,
@@ -123,6 +132,26 @@ app.post("/Loginsearch", async (request, response) => {
       .json({ success: false, message: "Error during login" });
   }
 });
+
+
+app.post('/Login', async (request, response) => {
+  const { Name, Password } = request.body;
+  try {
+      const user = await data3model.findOne({ Name, Password });
+      if (user) { response.json({ success: true, message: 'Login Successfully' }); }
+      else { response.json({ success: false, message: 'Invalid Username and email' }); }
+  }
+  catch (error) {
+      response.status(500).json({ sucess: false, message: 'Error' })
+  }
+})
+
+
+
+
+
+
+
 
 app.get("/view1/:id", (req, res) => {
   const { id } = req.params;
@@ -155,3 +184,34 @@ app.get("/views", async (request, response) => {
   response.send(result);
 });
 module.exports = app;
+
+app.get("/iview", async (request, response) => {
+  const result = await itemmodel.aggregate([
+    {
+      $lookup: {
+        from: "subcats",
+        localField: "sid",
+        foreignField: "_id",
+        as: "itemsub",
+      },
+    },
+    {
+      $unwind: "$itemsub"
+    },
+    {
+      $lookup: {
+        from: "cats",
+        localField: "itemsub.cid",
+        foreignField: "_id",
+        as: "itemca",
+      },
+    },
+    {
+      $unwind: "$itemca"
+    }
+  ]);
+  console.log(result);
+  response.send(result);
+});
+module.exports = app;
+
